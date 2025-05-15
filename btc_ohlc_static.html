@@ -1,0 +1,99 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BTC OHLC % Breakdown</title>
+  <style>
+    body {
+      background: #121212;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    .card {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px auto;
+      max-width: 500px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    h2 { color: #00ffff; }
+    .bar {
+      height: 20px;
+      margin: 5px 0;
+      background: #333;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      text-align: left;
+      padding-left: 5px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+    }
+    .open { background-color: #00bcd4; }
+    .high { background-color: #4caf50; }
+    .low { background-color: #f44336; }
+    .close { background-color: #ff9800; }
+  </style>
+</head>
+<body>
+  <h1>BTC OHLC % Breakdown</h1>
+  <div id="cards"></div>
+
+  <script>
+    const timeframes = {
+      '1': '1 Hour',
+      '7': '4 Hours',
+      '30': '24 Hours',
+      '90': '7 Days'
+    };
+
+    const colors = {
+      open: 'open',
+      high: 'high',
+      low: 'low',
+      close: 'close'
+    };
+
+    async function fetchAndRender() {
+      const container = document.getElementById('cards');
+      container.innerHTML = '';
+
+      for (let key in timeframes) {
+        const res = await fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/ohlc?vs_currency=usd&days=${key}`);
+        const data = await res.json();
+        if (!data.length) continue;
+
+        const latest = data[data.length - 1];
+        const [_, open, high, low, close] = latest;
+        const total = open + high + low + close;
+
+        const percentages = {
+          open: ((open / total) * 100).toFixed(2),
+          high: ((high / total) * 100).toFixed(2),
+          low: ((low / total) * 100).toFixed(2),
+          close: ((close / total) * 100).toFixed(2),
+        };
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<h2>${timeframes[key]}</h2>` + Object.entries(percentages).map(([key, value]) => `
+          <div>${key.toUpperCase()}: ${value}%</div>
+          <div class="bar"><div class="bar-fill ${colors[key]}" style="width:${value}%">${value}%</div></div>
+        `).join('');
+        container.appendChild(card);
+      }
+    }
+
+    fetchAndRender();
+    setInterval(fetchAndRender, 60000); // update every 60s
+  </script>
+</body>
+</html>
